@@ -73,7 +73,7 @@ class OrderResource extends Resource
                                         }
                                         
                                         $nextId = (Order::max('id') ?? 0) + 1;
-                                        return 'MNG-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+                                        return 'DI-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
                                     }),
                                 Forms\Components\DatePicker::make('date')
                                     ->default(now())

@@ -22,12 +22,12 @@ class OrderObserver
     {
         // Update with final reference based on ID
         $order->updateQuietly([
-            'reference' => 'MNG-' . str_pad($order->id, 4, '0', STR_PAD_LEFT)
+            'reference' => 'DI-' . str_pad($order->id, 4, '0', STR_PAD_LEFT)
         ]);
 
         if (! $order->invoice) {
             $order->invoice()->create([
-                'invoice_number' => 'MNG-INV-' . str_pad($order->id, 4, '0', STR_PAD_LEFT),
+                'invoice_number' => 'DI-INV-' . str_pad($order->id, 4, '0', STR_PAD_LEFT),
                 'issued_date' => now(),
                 'total_amount' => $order->total_amount,
                 'balance_due' => $order->total_amount,

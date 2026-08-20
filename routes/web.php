@@ -6,6 +6,26 @@ Route::get('/', function () {
     return redirect('/admin');
 });
 
+Route::get('/test-email', function () {
+    $message = (new \Illuminate\Notifications\Messages\MailMessage)
+        ->subject('Welcome to ' . config('app.name', 'Deshani Industries'))
+        ->greeting('Hello, John Doe!')
+        ->line('This is a test of the modernized email template. We hope you like the new look and feel.')
+        ->line('Your account has been created successfully. You can now log in and start using the system.')
+        ->action('View Dashboard', url('/admin'))
+        ->line('Thank you for using our application!');
+        
+    return $message->render();
+});
+
+Route::get('/test-invoice-print', function () {
+    $invoice = \App\Models\Invoice::latest()->first();
+    if (!$invoice) {
+        return 'No invoices found in the database. Please create one in the admin panel first.';
+    }
+    return redirect()->route('invoices.print', $invoice);
+});
+
 Route::get('/admin/invoices/{invoice}/print', [App\Http\Controllers\InvoiceController::class, 'print'])->name('invoices.print');
 Route::get('/price-list', [\App\Http\Controllers\PriceListController::class, 'index'])->name('price-list');
 Route::get('/admin/payments/{payment}/print', [App\Http\Controllers\PaymentController::class, 'print'])->name('payments.print');

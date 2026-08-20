@@ -5,15 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice {{ $invoice->invoice_number }}</title>
     <style>
-        body { font-family: sans-serif; padding: 40px; }
-        .invoice-header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-        .company-details h1 { margin: 0; color: #333; }
-        .company-details p { margin: 5px 0; color: #666; }
-        .company-details{
-            display: flex;
-            gap: 25px;
-        }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; line-height: 1.5; }
+        .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 50px; padding-bottom: 25px; border-bottom: 2px solid #f4f4f5; }
+        .company-info-wrapper { display: flex; align-items: center; gap: 30px; }
+        .company-details h1 { margin: 0 0 5px 0; color: #18181b; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+        .company-details p { margin: 2px 0; color: #52525b; font-size: 14px; }
         .invoice-details { text-align: right; }
+        .invoice-details h2 { margin: 0 0 10px 0; color: #18181b; font-size: 28px; letter-spacing: 1px; font-weight: 800; }
+        .invoice-details p { margin: 4px 0; color: #52525b; font-size: 14px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
         th { background-color: #f8f9fa; }
@@ -28,22 +27,21 @@
 </head>
 <body onload="window.print()">
     <div class="invoice-header">
-        <div class="company-details">
-            <div>
-                <img src="{{ asset('img/v-logo.png') }}" alt="Manager Logo" width="200">
-            </div>
-            <div>
-                <h1>Manager (Pvt) Ltd</h1>
-                <p>NO:66/4/2 WEBADAGALLA,</p>
-                <p>NITTAMBUWA.</p>
-                <p>+94752625086 / +94701260560</p>
+        <div class="company-info-wrapper">
+            
+            <div class="company-details">
+                <div class="company-logo">
+                    <img src="{{ asset('img/v-logo.png') }}" alt="Deshani Industries Logo" style="max-width: 220px; height: auto;">
+                </div>
+                <p>101/1 Bogahawatta road,</p>
+                <p>Hekitta, Wattala.</p>
+                <p>Tel: 0777 386 356</p>
             </div>
         </div>
         <div class="invoice-details">
             <h2>INVOICE</h2>
-            <p><strong>#{{ $invoice->invoice_number }}</strong></p>
-            <p>Date: {{ $invoice->issued_date }}</p>
-            <!-- <p>Status: {{ ucfirst($invoice->status) }}</p> -->
+            <p>Invoice No: <strong>#{{ $invoice->invoice_number }}</strong></p>
+            <p>Date: <strong>{{ \Carbon\Carbon::parse($invoice->issued_date)->format('M d, Y') }}</strong></p>
         </div>
     </div>
 
