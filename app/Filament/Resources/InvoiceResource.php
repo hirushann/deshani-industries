@@ -35,6 +35,7 @@ class InvoiceResource extends Resource
                     ->required(),
                 Forms\Components\TextInput::make('invoice_number')
                     ->required()
+                    ->placeholder('DI-INV-001')
                     ->maxLength(255),
                 Forms\Components\TextInput::make('total_amount')
                     ->required()

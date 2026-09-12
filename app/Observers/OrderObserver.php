@@ -27,7 +27,7 @@ class OrderObserver
 
         if (! $order->invoice) {
             $order->invoice()->create([
-                'invoice_number' => 'DI-INV-' . str_pad($order->id, 4, '0', STR_PAD_LEFT),
+                'invoice_number' => Invoice::generateInvoiceNumber($order->id),
                 'issued_date' => now(),
                 'total_amount' => $order->total_amount,
                 'balance_due' => $order->total_amount,

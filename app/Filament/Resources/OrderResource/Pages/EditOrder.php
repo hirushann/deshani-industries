@@ -23,7 +23,7 @@ class EditOrder extends EditRecord
                         // Generate invoice if missing
                         \App\Models\Invoice::create([
                             'order_id' => $record->id,
-                            'invoice_number' => 'MNG-INV-' . str_pad($record->id, 5, '0', STR_PAD_LEFT),
+                            'invoice_number' => \App\Models\Invoice::generateInvoiceNumber($record->id),
                             'total_amount' => $record->total_amount,
                             'balance_due' => $record->total_amount,
                             'status' => 'unpaid',

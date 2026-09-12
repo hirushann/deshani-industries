@@ -57,4 +57,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return true;
     }
+
+    public function getCommissionBalance(): float
+    {
+        return 0.0;
+    }
 }
