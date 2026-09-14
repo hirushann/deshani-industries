@@ -80,6 +80,7 @@ class ProductResource extends Resource
             ->columns([
 
                 Tables\Columns\TextColumn::make('productCategory.name')
+                    ->label('Category')
                     ->sortable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('name')
@@ -106,7 +107,11 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('productCategory')
+                    ->relationship('productCategory', 'name')
+                    ->label('Category')
+                    ->searchable()
+                    ->preload(),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

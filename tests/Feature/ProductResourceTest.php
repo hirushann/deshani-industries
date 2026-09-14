@@ -135,5 +135,47 @@ class ProductResourceTest extends TestCase
         Livewire::test(ListProducts::class)
             ->assertTableActionHidden('delete', $product);
     }
+
+    public function test_can_filter_products_by_category(): void
+    {
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'view_any_product', 'guard_name' => 'web']);
+        $user = User::factory()->create();
+        $user->givePermissionTo('view_any_product');
+
+        $category1 = ProductCategory::create(['name' => 'Electronics']);
+        $category2 = ProductCategory::create(['name' => 'Apparel']);
+
+        $product1 = Product::create([
+            'name' => 'Laptop',
+            'sku' => 'LAP-001',
+            'cost_price' => 500.00,
+            'price' => 800.00,
+            'stock_quantity' => 10,
+            'min_stock_alert' => 2,
+            'product_category_id' => $category1->id,
+        ]);
+
+        $product2 = Product::create([
+            'name' => 'T-Shirt',
+            'sku' => 'TSH-001',
+            'cost_price' => 15.00,
+            'price' => 30.00,
+            'stock_quantity' => 50,
+            'min_stock_alert' => 10,
+            'product_category_id' => $category2->id,
+        ]);
+
+        \Filament\Facades\Filament::setCurrentPanel(\Filament\Facades\Filament::getPanel('admin'));
+        $this->actingAs($user);
+
+        Livewire::test(ListProducts::class)
+            ->assertCanSeeTableRecords([$product1, $product2])
+            ->filterTable('productCategory', $category1->id)
+            ->assertCanSeeTableRecords([$product1])
+            ->assertCanNotSeeTableRecords([$product2])
+            ->filterTable('productCategory', $category2->id)
+            ->assertCanSeeTableRecords([$product2])
+            ->assertCanNotSeeTableRecords([$product1]);
+    }
 }
 
