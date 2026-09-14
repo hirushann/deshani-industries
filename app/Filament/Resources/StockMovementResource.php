@@ -29,6 +29,9 @@ class StockMovementResource extends Resource
             ->schema([
                 Forms\Components\Select::make('product_id')
                     ->relationship('product', 'name')
+                    ->getOptionLabelFromRecordUsing(fn (\App\Models\Product $record) => "{$record->name}" . ($record->sku ? " ({$record->sku})" : ''))
+                    ->searchable(['name', 'sku'])
+                    ->preload()
                     ->required(),
                 Forms\Components\DatePicker::make('date')
                     ->required()
@@ -56,7 +59,7 @@ class StockMovementResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('product.name')
-                    ->numeric()
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('date')
                     ->date()
@@ -65,6 +68,13 @@ class StockMovementResource extends Resource
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('type')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'in' => 'success',
+                        'out' => 'danger',
+                        'adjustment' => 'warning',
+                        default => 'gray',
+                    })
                     ->searchable(),
                 Tables\Columns\TextColumn::make('reference')
                     ->searchable(),
@@ -82,10 +92,15 @@ class StockMovementResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->after(fn (StockMovement $record) => $record->revertFromProduct()),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->after(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            $records->each->revertFromProduct();
+                        }),
                 ]),
             ]);
     }

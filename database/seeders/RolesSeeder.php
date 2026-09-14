@@ -16,24 +16,30 @@ class RolesSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Ensure permissions exist
-        $permissions = [
+        $employeePermissions = [
             'view_any_order', 'view_order', 'create_order', 
             'view_any_product', 'view_product', 
             'view_any_customer', 'view_customer', 'create_customer',
-            'view_any_invoice', 'view_invoice'
+            'view_any_invoice', 'view_invoice',
         ];
 
-        foreach ($permissions as $permissionName) {
+        $managerPermissions = array_merge($employeePermissions, [
+            'update_product',
+        ]);
+
+        foreach ($managerPermissions as $permissionName) {
             \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permissionName, 'guard_name' => 'web']);
         }
 
         // Employee Role
         $employeeRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Employee', 'guard_name' => 'web']);
-        $employeeRole->givePermissionTo($permissions);
+        $employeeRole->syncPermissions($employeePermissions);
 
-        // Manager Role
-        $managerRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Manager', 'guard_name' => 'web']);
-        $managerRole->givePermissionTo(\Spatie\Permission\Models\Permission::all());
+        // Manager Roles (Manager and manager)
+        foreach (['Manager', 'manager'] as $roleName) {
+            $managerRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+            $managerRole->syncPermissions($managerPermissions);
+        }
 
         // Admin Role
         $adminRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);

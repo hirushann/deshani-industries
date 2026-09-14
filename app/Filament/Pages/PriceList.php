@@ -47,10 +47,14 @@ class PriceList extends Page implements HasTable
                     ->weight('bold')
                     ->color('primary'),
                 Tables\Columns\TextColumn::make('stock_quantity')
-                    ->label('Availability')
+                    ->label('Stock')
+                    ->numeric()
                     ->badge()
-                    ->formatStateUsing(fn (int $state): string => $state > 0 ? 'In Stock' : 'Out of Stock')
-                    ->color(fn (int $state): string => $state > 0 ? 'success' : 'danger')
+                    ->color(fn (Product $record, int $state): string => match (true) {
+                        $state <= 0 => 'danger',
+                        $record->min_stock_alert && $state <= $record->min_stock_alert => 'warning',
+                        default => 'success',
+                    })
                     ->sortable(),
             ])
             ->defaultSort('name')

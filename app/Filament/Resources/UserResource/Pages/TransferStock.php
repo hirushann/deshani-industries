@@ -52,7 +52,10 @@ class TransferStock extends Page
         $product = \App\Models\Product::findOrFail($data['product_id']);
         $quantity = $data['quantity'];
 
-        // 1. Create Stock Movement (OUT)
+        // 1. Deduct from Main Inventory
+        $product->decrement('stock_quantity', $quantity);
+
+        // 2. Create Stock Movement (OUT)
         \App\Models\StockMovement::create([
             'product_id' => $product->id,
             'quantity' => -$quantity,

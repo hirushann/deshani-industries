@@ -39,7 +39,7 @@ class ProductPolicy
      */
     public function update(User $user, Product $product): bool
     {
-        return $user->can('update_product');
+        return $user->can('update_product') || $user->hasRole(['Manager', 'manager']);
     }
 
     /**

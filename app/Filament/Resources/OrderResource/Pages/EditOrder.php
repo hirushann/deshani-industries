@@ -11,6 +11,26 @@ class EditOrder extends EditRecord
 {
     protected static string $resource = OrderResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $items = ! empty($data['items']) ? $data['items'] : ($this->data['items'] ?? []);
+        if (! empty($items)) {
+            $subtotal = collect($items)->sum(function ($item) {
+                $qty = is_numeric($item['quantity'] ?? null) && (float) $item['quantity'] > 0 ? (float) $item['quantity'] : 0;
+                $price = is_numeric($item['unit_price'] ?? null) ? (float) $item['unit_price'] : 0;
+                return $qty * $price;
+            });
+
+            $discount = is_numeric($data['discount'] ?? null) ? (float) $data['discount'] : 0;
+            $type = $data['discount_type'] ?? 'fixed';
+
+            $discountAmount = $type === 'percentage' ? $subtotal * ($discount / 100) : $discount;
+            $data['total_amount'] = max(0, $subtotal - $discountAmount);
+        }
+
+        return $data;
+    }
+
     protected function getHeaderActions(): array
     {
         return [

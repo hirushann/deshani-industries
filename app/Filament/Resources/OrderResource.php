@@ -28,7 +28,11 @@ class OrderResource extends Resource
         // Try to get items from current scope (root) or parent scope (from inside repeater)
         $items = $get('items') ?? $get('../../items') ?? [];
         
-        $subtotal = collect($items)->sum(fn ($item) => $item['subtotal'] ?? 0);
+        $subtotal = collect($items)->sum(function ($item) {
+            $qty = is_numeric($item['quantity'] ?? null) && (float) $item['quantity'] > 0 ? (float) $item['quantity'] : 0;
+            $price = is_numeric($item['unit_price'] ?? null) ? (float) $item['unit_price'] : 0;
+            return $qty * $price;
+        });
         
         // Try to get discount from current or parent
         $discount = $get('discount') ?? $get('../../discount') ?? 0;
@@ -36,20 +40,16 @@ class OrderResource extends Resource
         
         $discountAmount = 0;
         if ($type === 'percentage') {
-            $discountAmount = $subtotal * ($discount / 100);
+            $discountAmount = $subtotal * ((float) $discount / 100);
         } else {
-            $discountAmount = $discount;
+            $discountAmount = (float) $discount;
         }
         
         $grandTotal = max(0, $subtotal - $discountAmount);
         
         // Set values. Note: In Filament, $set with relative path ../../ might be needed if inside repeater.
-        // We set both to cover all cases, as setting a non-existent field usually does nothing or creates temporary state.
         $set('total_amount', $grandTotal);
         $set('../../total_amount', $grandTotal);
-        
-        $set('subtotal_display', number_format($subtotal, 2) . ' LKR');
-        $set('../../subtotal_display', number_format($subtotal, 2) . ' LKR');
     }
 
     public static function form(Form $form): Form
@@ -109,11 +109,11 @@ class OrderResource extends Resource
                                             ->searchable(['name', 'sku'])
                                             ->preload()
                                             ->required()
-                                            ->reactive()
+                                            ->live()
                                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                                 $price = \App\Models\Product::find($state)?->price ?? 0;
                                                 $set('unit_price', $price);
-                                                $quantity = $get('quantity') ?? 1;
+                                                $quantity = is_numeric($get('quantity')) && (int) $get('quantity') > 0 ? (int) $get('quantity') : 1;
                                                 $set('subtotal', $price * $quantity);
                                                 self::updateTotals($get, $set);
                                             })
@@ -127,9 +127,11 @@ class OrderResource extends Resource
                                             ->default(1)
                                             ->minValue(1)
                                             ->required()
-                                            ->reactive()
+                                            ->live(debounce: 250)
                                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                                $set('subtotal', $state * $get('unit_price'));
+                                                $qty = is_numeric($state) && (float) $state > 0 ? (float) $state : 0;
+                                                $unitPrice = is_numeric($get('unit_price')) ? (float) $get('unit_price') : 0;
+                                                $set('subtotal', $qty * $unitPrice);
                                                 self::updateTotals($get, $set);
                                             })
                                             ->columnSpan([
@@ -139,9 +141,11 @@ class OrderResource extends Resource
                                             ->label('Unit Price')
                                             ->numeric()
                                             ->required()
-                                            ->reactive()
+                                            ->live(debounce: 250)
                                             ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                                $set('subtotal', $state * $get('quantity'));
+                                                $qty = is_numeric($get('quantity')) && (float) $get('quantity') > 0 ? (float) $get('quantity') : 0;
+                                                $price = is_numeric($state) ? (float) $state : 0;
+                                                $set('subtotal', $qty * $price);
                                                 self::updateTotals($get, $set);
                                             })
                                             ->columnSpan([
@@ -150,7 +154,7 @@ class OrderResource extends Resource
                                         Forms\Components\TextInput::make('subtotal')
                                             ->numeric()
                                             ->required()
-                                            ->disabled()
+                                            ->readOnly()
                                             ->dehydrated()
                                             ->columnSpan([
                                                 'md' => 3,
@@ -187,13 +191,21 @@ class OrderResource extends Resource
                                     ->label(fn (Forms\Get $get) => $get('discount_type') === 'percentage' ? 'Discount Percentage' : 'Discount Amount')
                                     ->suffix(fn (Forms\Get $get) => $get('discount_type') === 'percentage' ? '%' : 'LKR')
                                     ->default(0.00)
-                                    ->live()
+                                    ->live(debounce: 250)
                                     ->afterStateUpdated(function (Forms\Get $get, Forms\Set $set) {
                                         self::updateTotals($get, $set);
                                     }),
                                 Forms\Components\Placeholder::make('subtotal_display')
                                     ->label('Subtotal')
-                                    ->content(fn (Forms\Get $get) => number_format(collect($get('items'))->sum(fn ($item) => $item['subtotal'] ?? 0), 2) . ' LKR'),
+                                    ->content(function (Forms\Get $get) {
+                                        $items = $get('items') ?? [];
+                                        $subtotal = collect($items)->sum(function ($item) {
+                                            $qty = is_numeric($item['quantity'] ?? null) && (float) $item['quantity'] > 0 ? (float) $item['quantity'] : 0;
+                                            $price = is_numeric($item['unit_price'] ?? null) ? (float) $item['unit_price'] : 0;
+                                            return $qty * $price;
+                                        });
+                                        return number_format($subtotal, 2) . ' LKR';
+                                    }),
                                 Forms\Components\TextInput::make('total_amount')
                                     ->label('Grand Total')
                                     ->numeric()

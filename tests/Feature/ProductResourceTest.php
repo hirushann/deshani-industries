@@ -65,4 +65,75 @@ class ProductResourceTest extends TestCase
         $this->assertSame(15, $product->stock_quantity);
         $this->assertSame(3, $product->min_stock_alert);
     }
+
+    public function test_manager_role_can_edit_product(): void
+    {
+        $this->seed(\Database\Seeders\RolesSeeder::class);
+        $managerRole = \Spatie\Permission\Models\Role::findByName('Manager', 'web');
+        $manager = User::factory()->create();
+        $manager->assignRole($managerRole);
+
+        $category = ProductCategory::create(['name' => 'Tools']);
+        $product = Product::create([
+            'name' => 'Original Tool',
+            'sku' => 'TOOL-001',
+            'cost_price' => 50.00,
+            'price' => 80.00,
+            'stock_quantity' => 20,
+            'min_stock_alert' => 5,
+            'product_category_id' => $category->id,
+        ]);
+
+        \Filament\Facades\Filament::setCurrentPanel(\Filament\Facades\Filament::getPanel('admin'));
+        $this->actingAs($manager);
+
+        Livewire::test(ListProducts::class)
+            ->assertTableActionExists('edit')
+            ->mountTableAction('edit', $product)
+            ->assertTableActionMounted('edit')
+            ->setTableActionData([
+                'name' => 'Updated Tool',
+                'sku' => 'TOOL-001-NEW',
+                'cost_price' => 60.00,
+                'price' => 95.00,
+                'stock_quantity' => 25,
+                'min_stock_alert' => 4,
+                'product_category_id' => $category->id,
+            ])
+            ->callMountedTableAction()
+            ->assertHasNoTableActionErrors();
+
+        $product->refresh();
+        $this->assertSame('Updated Tool', $product->name);
+        $this->assertSame(25, $product->stock_quantity);
+    }
+
+    public function test_manager_role_cannot_delete_product(): void
+    {
+        $this->seed(\Database\Seeders\RolesSeeder::class);
+        $managerRole = \Spatie\Permission\Models\Role::findByName('Manager', 'web');
+        $manager = User::factory()->create();
+        $manager->assignRole($managerRole);
+
+        $category = ProductCategory::create(['name' => 'Tools']);
+        $product = Product::create([
+            'name' => 'Original Tool',
+            'sku' => 'TOOL-002',
+            'cost_price' => 50.00,
+            'price' => 80.00,
+            'stock_quantity' => 20,
+            'min_stock_alert' => 5,
+            'product_category_id' => $category->id,
+        ]);
+
+        \Filament\Facades\Filament::setCurrentPanel(\Filament\Facades\Filament::getPanel('admin'));
+        $this->actingAs($manager);
+
+        $this->assertFalse($manager->can('delete', $product));
+        $this->assertFalse($manager->can('deleteAny', Product::class));
+
+        Livewire::test(ListProducts::class)
+            ->assertTableActionHidden('delete', $product);
+    }
 }
+
